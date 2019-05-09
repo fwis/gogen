@@ -1,0 +1,176 @@
+//autogen: time={{$.GenTime}},hash={{$.GenHash}},
+package dm
+
+import (
+	"app/db"
+	"database/sql"
+	"github.com/jmoiron/sqlx"
+
+	"{{$.MmPackage}}"
+)
+
+/*
+{{.CreateTableSQL}} 
+*/
+
+type DM_{{.Name}} struct {
+	*db.DMBase
+}
+
+var dm_{{.Name}} *DM_{{.Name}}
+
+func init() {
+	pk := &db.PK{
+		Name:"{{$.PKCol.ColName}}",
+		IsNum:{{- if $.PKCol.IsNum -}}true{{- else -}}false{{- end -}},
+		NotAutoInc:{{- if $.PKCol.NotAutoInc -}}true{{- else -}}false{{- end -}},
+	}
+	dm_{{.Name}} = &DM_{{.Name}}{
+		db.NewDMBase(
+			db.NewSQLMetaBase(
+				"{{.Table}}",
+				[]string{
+					{{- range $.Cols}}
+					"{{.FieldName}}",
+					{{- end}}
+				},
+				pk, //pkcolIndex
+			),
+		),
+	}
+
+	db.RegisterDM(InitDM_{{.Name}})
+}
+
+func (m *DM_{{.Name}}) Clone(newSqlExec db.SQLExecutor) *DM_{{.Name}} {
+	return &DM_{{.Name}}{
+		m.DMBase.Clone(newSqlExec),
+	}
+}
+
+func GetDM_{{.Name}}() *DM_{{.Name}} {
+	return dm_{{.Name}}
+}
+
+func InitDM_{{.Name}}(db_ *sqlx.DB) error {
+	dm_{{.Name}}.SetStub(dm_{{.Name}})
+	return dm_{{.Name}}.Init(db_)
+}
+
+func (m *DM_{{.Name}}) QueryByPK(pkval {{$.PKCol.GoTypeName}}) (obj *mm.{{.Name}}, err error) {
+	obj = nil
+	err = nil
+	db.QueryByPK(m, func(rows *sqlx.Rows, err0 error) {
+		if err0 != nil {
+			err = err0
+			return
+		}
+
+		if rows == nil {
+			obj = nil
+		} else {
+			obj, err = m.ScanRow(rows)
+		}
+
+		return
+	}, pkval)
+
+	return
+}
+
+func (m *DM_{{.Name}}) QueryList(sqlstr string, args ...interface{}) (objs []*mm.{{.Name}}, err error) {
+	objs = []*mm.{{.Name}}{}
+	err = db.QueryList(m, func(rows *sqlx.Rows, err0 error) {
+		if err0 == nil && rows != nil {
+			obj, err := m.ScanRow(rows)
+			if err == nil && obj != nil {
+				objs = append(objs, obj)
+			}
+		}
+	}, sqlstr, args...)
+
+	return
+}
+
+func (m *DM_{{.Name}}) SetPKValue(pObj interface{}, pkval int64) {
+{{- if $.PKCol.IsNum }}
+	obj, ok := pObj.(*mm.{{.Name}})
+	if !ok {
+		return
+	}
+	obj.{{$.PKCol.FieldName}} = pkval
+{{end}}
+}
+
+func (m *DM_{{.Name}}) Values(pObj interface{}, includePK bool) []interface{} {
+	obj, ok := pObj.(*mm.{{.Name}})
+	if !ok {
+		return nil
+	}
+	if includePK {
+		return []interface{}{
+			{{- range $.Cols}}
+			obj.{{.FieldName}},
+			{{- end}}
+		}
+	} else {
+		return []interface{}{
+			{{- range $.Cols}}
+			{{if eq .FieldName $.PKCol.FieldName -}}
+			// obj.{{.FieldName}},
+			{{- else -}}
+			obj.{{.FieldName}},
+			{{- end -}}
+			{{- end}}
+		}
+	}
+}
+
+func (m *DM_{{.Name}}) ScanRow(rows db.RowScanner) (*mm.{{.Name}}, error) {
+	obj := &mm.{{.Name}}{}
+	err := rows.Scan(
+		{{- range $.Cols}}
+		&obj.{{.FieldName}},
+		{{- end}}
+	)
+	return obj, err
+}
+
+func (m *DM_{{.Name}}) QueryOne(sqlstr string, args ...interface{}) (*mm.{{.Name}}, error) {
+	row := m.SQLExec().QueryRow(sqlstr, args...)
+
+	obj, err := m.ScanRow(row)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+	return obj, err
+}
+
+func (m *DM_{{.Name}}) MustQueryOne(sqlstr string, args ...interface{}) (*mm.{{.Name}}, error) {
+	rows, err := m.SQLExec().Query(sqlstr, args...)
+	defer rows.Close()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var obj *mm.{{.Name}} = nil
+	if !rows.Next() {
+		return nil, nil
+	}
+
+	obj, err = m.ScanRow(rows)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	if rows.Next() {
+		return nil, db.ErrTooManyRows
+	}
+	return obj, err
+}
