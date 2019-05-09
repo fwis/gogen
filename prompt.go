@@ -1,11 +1,11 @@
 package main
 
 import (
-	"gen/typedef"
 	"os"
 	"strings"
 
-	"github.com/c-bata/go-prompt"
+	// "github.com/c-bata/go-prompt"
+	"./typedef"
 )
 
 type ConsoleWriterWrapper struct {

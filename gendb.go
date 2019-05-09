@@ -88,7 +88,7 @@ import (
 	"path/filepath"
 	"{{$.MmPackage}}"
 
-	"./gendb"
+	"github.com/fwis/gogen/gendb"
 )
 
 func main() {

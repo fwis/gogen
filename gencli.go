@@ -7,8 +7,8 @@ import (
 	"os"
 	"reflect"
 
-	"gen/genjson"
-	"gen/typedef"
+	"./genjson"
+	"./typedef"
 )
 
 func main() {
