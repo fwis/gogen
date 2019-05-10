@@ -65,6 +65,7 @@ func NewEnv(outputPath string) (m *Env) {
 	}
 
 	//m.EscapeOutputDir = strings.Replace(m.OutputDir, "\\", "\\\\", -1) //using  EscapePath in template
-	m.TemplatePath = filepath.Join(m.GOPATH, "src", "gen", "gendb", "gendb.template")
+	// m.TemplatePath = filepath.Join(m.GOPATH, "src", "gen", "gendb", "gendb.template")
+	m.TemplatePath = filepath.Join(m.GOPATH, "src", "vendor", "github.com", "fwis", "gogen", "gendb", "gendb.template")
 	return
 }
