@@ -38,7 +38,8 @@ func main() {
 	_ = MmPackage
 
 	env := gendb.NewEnv(outputPath)
-	env.TmpDir = "D:/"
+	// env.TmpDir = "D:/"
+	env.TmpDir = filepath.Join(env.GOPATH, "src", "main")
 	if outputPath == "" {
 		env.OutputDir = filepath.Join(env.GOPATH, "src", "biohit.com", "dm")
 	}
